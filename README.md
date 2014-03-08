@@ -4,13 +4,15 @@ Magic: The Gatheric card scanner using OCR (using Tesseract and OpenCV)
 
 ## Description
 
+Videos + diagrams coming soon
+
 ## Dependencies
 
 ### Required Python packages
 
-- numpy
-- hunspell
-- xerox
+- numpy `$ sudo pip install numpy`
+- hunspell `$ git clone git@github.com:smathot/pyhunspell.git && cd pyhunspell/ && sudo ./setup.py install`
+- xerox `$ sudo pip install xerox`
 
 ### Required software
 
@@ -18,14 +20,16 @@ Magic: The Gatheric card scanner using OCR (using Tesseract and OpenCV)
 - xclip or equivalent for your OS (see xerox)
 - GNU make (to build dictionary files)
 
+On debian for example: `$ sudo apt-get install make xclip tesseract`
+
 ### Required data
 
-- cards.xml with the cards you'd like to recognise.
+- `cards.xml` with the cards you'd like to recognise.
 
 ### Required Hardware
 
 - Webcam with reasonable resolution and lighting (tested 800x600)
-- Optional rig to place the card in the best place for matching
+- Optional rig to place the card in the best place for matching and prevent it from moving around
 
 ## Installing 
 
