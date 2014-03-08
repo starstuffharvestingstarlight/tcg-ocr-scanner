@@ -1,6 +1,6 @@
-# mtg-ocr-scanner
+# tcg-ocr-scanner
 
-Magic: The Gatheric card scanner using OCR (using Tesseract and OpenCV)
+Trading Card Game card scanner using OCR (using Tesseract and OpenCV)
 
 ## Description
 
@@ -95,4 +95,5 @@ Detected: Doom Blade (12.16 secs)
 Detected: Bronzebeak Moa (9.38 secs)
 ```
 
+Notice: The card names listed in this example are from Magic: The Gathering™, a trademark of Wizards of the Coast, Inc., a subsidiary of Hasbro, Inc. © 2014 Wizards. All Rights Reserved. This project is not affiliated with, endorsed, sponsored, or specifically approved by Wizards of the Coast LLC. Please contact us if there is a problem.
 
