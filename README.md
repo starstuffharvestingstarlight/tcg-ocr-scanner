@@ -157,8 +157,8 @@ Notice: The card names listed in this example are from Magic: The Gathering™, 
 
 ### Test results
 
-Test date  | Dictionary Size | Cards tested | Cards matched | Average T (s) | Max T (s) | Min T (s) | Error rate
----------- | --------------- | ------------ | ------------- | ------------- | --------- | --------- | ----------
-2014-03-09 | 14123           | 57           | 51            | 22.8          | 103.5     | 7.39      | 10.5%
-2014-03-09 | 14123           | 94           | 90            | 20.8          | 100.49    | 6.04      | 4.26%
+Test date  | Dictionary Size | Cards tested | Cards matched | Average T (s) | Max T (s) | Min T (s) | Median T (s) | Error rate
+---------- | --------------- | ------------ | ------------- | ------------- | --------- | --------- | ------------ | ----------
+2014-03-09 | 14123           | 57           | 51            | 22.8          | 103.5     | 7.39      | 16.19        | 10.5%
+2014-03-09 | 14123           | 94           | 90            | 20.8          | 100.49    | 6.04      | 12.82        | 4.26%
 
