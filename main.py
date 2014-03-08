@@ -125,7 +125,7 @@ def image_to_string(img):
 
 def tick(ts, message):
   global options
-  if options.verbosity > 1:
+  if options.verbosity == 2:
     print "elapsed [%s]: %.2fs" % (message, round(time.time() - ts, 2))
     return time.time()
   return None
@@ -200,10 +200,10 @@ if __name__ == "__main__":
 
         if (poll[suggestions[0]] > 10): 
           last_detected = card_db[suggestions[0]][1]
-          message = "Last detected: %s (%.2f secs)" % (last_detected , round(time.time() - last_detected_ts, 2))
+          message = "Detected: %s (%.2f secs)" % (last_detected , round(time.time() - last_detected_ts, 2))
           last_detected_ts = time.time()
           if options.verbosity >= 1:
-            print "Detected %s " % last_detected
+            print message
           if options.clipboard:
             string_to_clipboard(last_detected)
           if options.nobeep:
