@@ -10,10 +10,37 @@ Magic: The Gatheric card scanner using OCR (using Tesseract and OpenCV)
 
 ## Running
 
+### Command line options
+
+```
+$ ./main.py -h
+usage: main.py [-h] [--nobeep] [--clipboard]
+               [--batchfile BATCHFILE [BATCHFILE ...]] [-v int]
+               [-d DICTIONARY] [--min-suggestions int] [--min-length int]
+
+Scan MTG cards using OCR (tesseract).
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --nobeep              disable beep when scan happens
+  --clipboard           save card name to clipboard
+  --batchfile BATCHFILE [BATCHFILE ...]
+                        save data to batch file
+  -v int, --verbosity int
+                        verbosity level (0: quiet, 1: feedback, 2: debug)
+  -d DICTIONARY, --dictionary DICTIONARY
+                        dictionary to use (e.g., dict/INN for dict/INN.dic +
+                        dict/INN.aff)
+  --min-suggestions int
+                        minimum number of suggestions polled (e.g., 5 means it
+                        is considered a correct guess after 5 equal guesses)
+  --min-length int      minimum length for a detected card name
+```
+
 ### Example run
 
 ```bash
-./main.py -v 1
+$ ./main.py -v 1
 ```
 
 ### Output
