@@ -4,11 +4,33 @@ Trading Card Game card scanner using OCR (using Tesseract and OpenCV)
 
 Currently only supports a sub set of Magic: The Gathering™ cards, but the design is generic enough to support any Trading Card Game that uses the card name as the main identifier of the card.
 
-Inspired by [card_scan](https://github.com/YenTheFirst/card_scan)
+Inspired by [card_scan](https://github.com/YenTheFirst/card_scan), but using an OCR detection and doesn't try to find out where the card is. Instead, it shows a rectangle in the UI so the user can align the card. 
+
+My setup cost a total of AUD $10 and consists of:
+- Kmart webcam (ID 05e3:0510 Genesys Logic, Inc)
+- Lamp
+- Webcam stand (old jar, wire)
 
 ## Description
 
+### Conceptual data flow
+
+![Data flow chart](https://raw.github.com/starstuffharvestingstarlight/tcg-ocr-scanner/master/docs/application_data_flow.png)
+
+### Demos
+
 - Demo of the [clipboard functionality](http://youtu.be/xH1hempwqMk)
+
+### Detection system description
+
+The system will guess the closest card, provided the poll threshold is high enough. 
+It will only output anything if it has a good candidate, which means it will have very few false positives. 
+Depending on the dictionary, the total guess space can be reduced as well. 
+For example, if one is trying to detect in a space of 250 cards, then the dictionary should only have those and any 'random' card will either fit one of those or not get detected at all. 
+There is no upper bound on how long the system takes to identify a card (though one might be added in the future).
+As it is now, it takes about 12s to detect a card name.
+Detection is highly dependant on image quality, lighting and camera focal distance.
+The current setup was optimised for 800x600 webcams, but the detection doesn't seem to depend on the resolution as much as it depends on image quality (nice focus, contrasting text).
 
 ## Roadmap
 
@@ -131,5 +153,5 @@ Detected: Doom Blade (12.16 secs)
 Detected: Bronzebeak Moa (9.38 secs)
 ```
 
-Notice: The card names listed in this example are from Magic: The Gathering™, a trademark of Wizards of the Coast, Inc., a subsidiary of Hasbro, Inc. © 2014 Wizards. All Rights Reserved. This project is not affiliated with, endorsed, sponsored, or specifically approved by Wizards of the Coast LLC. Please contact us if there is a problem.
+Notice: The card names listed in this example are from Magic: The Gathering™, a trademark of Wizards of the Coast, Inc., a subsidiary of Hasbro, Inc. © 2014 Wizards. All Rights Reserved. This project is not affiliated with, endorsed, sponsored, or specifically approved by Wizards of the Coast LLC. Please contact me if there is a problem.
 
