@@ -2,29 +2,63 @@
 
 Trading Card Game card scanner using OCR (using Tesseract and OpenCV)
 
+Currently only supports a sub set of Magic: The Gathering™ cards, but the design is generic enough to support any Trading Card Game that uses the card name as the main identifier of the card.
+
+Inspired by [card_scan](https://github.com/YenTheFirst/card_scan)
+
 ## Description
 
 Videos + diagrams coming soon
+
+## Roadmap
+
+### Main software goals
+
+- support scanning card by card at an acceptable speed (currently at about 12s)
+- output to csv formats for importing into other applications
+- call optional web service with the detected card
+- import card list in other formats (csv, xml) 
+
+### Main hardware goals
+
+- design frame for scanning cards with an off-the-shelf webcam (OpenSCAD)
+- design container for piling up cards in the scanner (OpenSCAD)
+- design automated card switching mechanism (OpenSCAD + Arduino/RaspberriPi/WhateverWorks)
 
 ## Dependencies
 
 ### Required Python packages
 
+- opencv (debian package `python-opencv`)
 - numpy `sudo pip install numpy`
-- hunspell `git clone git@github.com:smathot/pyhunspell.git && cd pyhunspell/ && sudo ./setup.py install`
-- xerox `sudo pip install xerox`
+- [hunspell](https://github.com/smathot/pyhunspell) `git clone git@github.com:smathot/pyhunspell.git && cd pyhunspell/ && sudo ./setup.py install`
+- [xerox](https://github.com/kennethreitz/xerox) `sudo pip install xerox`
 
 ### Required software
 
-- tesseract
-- xclip or equivalent for your OS (see xerox)
-- GNU make (to build dictionary files)
+- [tesseract](https://code.google.com/p/tesseract-ocr/)
+- [xclip](http://sourceforge.net/projects/xclip/) or equivalent for your OS (see xerox)
+- [GNU make](https://www.gnu.org/software/make/) (to build dictionary file)
 
 On debian for example: `sudo apt-get install make xclip tesseract`
 
 ### Required data
 
-- `cards.xml` with the cards you'd like to recognise.
+`cards.xml` with the cards you'd like to recognise. Current format included below.
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<whatevertagyoudlike>
+  <cards>
+    <card>
+      <name>CARD_NAME</name>
+      <set picURL="http://someURL?multiverseid=VENDOR_ID&amp;someParam=X">SET_NAME</set>
+    </card>
+    ...
+  </cards>
+</whatevertagyoudlike>
+
+```
 
 ### Required Hardware
 
@@ -68,6 +102,8 @@ optional arguments:
 ```
 
 ### Example run
+
+Using a `cards.xml` file with Magic: The Gathering™ card names
 
 ```bash
 $ ./main.py -v 1
