@@ -70,6 +70,15 @@ def init():
     choices=xrange(100)
   )
 
+  parser.add_argument(
+    '--webcam', 
+    help='webcam number (usually, the biggest number is the one you plugged in)', 
+    default=1,
+    metavar='int',
+    type=int,
+    choices=xrange(10)
+  )
+
   options = parser.parse_args()
 
   if options.nobeep:
@@ -84,7 +93,7 @@ def init():
   cv.NamedWindow("CaptureFeedback")
   # cv.NamedWindow("debug")
   cv.StartWindowThread()
-  camera = cv.CreateCameraCapture(1)
+  camera = cv.CreateCameraCapture(options.webcam)
 
   try:
     card_db = pickle.load(open("./dict/cards.pickle", "rb"))

@@ -22,7 +22,15 @@ Magic: The Gatheric card scanner using OCR (using Tesseract and OpenCV)
 
 - cards.xml with the cards you'd like to recognise.
 
+### Required Hardware
+
+- Webcam with reasonable resolution and lighting (tested 800x600)
+- Optional rig to place the card in the best place for matching
+
 ## Installing 
+
+- Get a copy of `cards.xml` and put it in `./dict/`
+- Run `make` to generate the database and the dictionary
 
 ## Running
 
@@ -51,6 +59,8 @@ optional arguments:
                         minimum number of suggestions polled (e.g., 5 means it
                         is considered a correct guess after 5 equal guesses)
   --min-length int      minimum length for a detected card name
+  --webcam int          webcam number (usually, the biggest number is the one
+                        you plugged in)
 ```
 
 ### Example run
