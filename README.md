@@ -10,9 +10,9 @@ Videos + diagrams coming soon
 
 ### Required Python packages
 
-- numpy `$ sudo pip install numpy`
-- hunspell `$ git clone git@github.com:smathot/pyhunspell.git && cd pyhunspell/ && sudo ./setup.py install`
-- xerox `$ sudo pip install xerox`
+- numpy `sudo pip install numpy`
+- hunspell `git clone git@github.com:smathot/pyhunspell.git && cd pyhunspell/ && sudo ./setup.py install`
+- xerox `sudo pip install xerox`
 
 ### Required software
 
@@ -20,7 +20,7 @@ Videos + diagrams coming soon
 - xclip or equivalent for your OS (see xerox)
 - GNU make (to build dictionary files)
 
-On debian for example: `$ sudo apt-get install make xclip tesseract`
+On debian for example: `sudo apt-get install make xclip tesseract`
 
 ### Required data
 
