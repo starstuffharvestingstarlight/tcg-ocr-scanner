@@ -131,7 +131,7 @@ Using a `cards.xml` file with Magic: The Gathering™ card names
 $ ./main.py -v 1
 ```
 
-### Output
+#### Output
 
 ```
 Detected: Rapid Hybridization (12.84 secs)
@@ -155,3 +155,8 @@ Detected: Bronzebeak Moa (9.38 secs)
 
 Notice: The card names listed in this example are from Magic: The Gathering™, a trademark of Wizards of the Coast, Inc., a subsidiary of Hasbro, Inc. © 2014 Wizards. All Rights Reserved. This project is not affiliated with, endorsed, sponsored, or specifically approved by Wizards of the Coast LLC. Please contact me if there is a problem.
 
+### Test results
+
+Test date  | Dictionary Size | Cards tested | Cards matched | Average T (s) | Max T (s) | Min T (s) | Error rate
+---------- | --------------- | ------------ | ------------- | ------------- | --------- | --------- | ----------
+2014-03-09 | 14123           | 57           | 51            | 22.8          | 103.5     | 7.39      | 10.5%
