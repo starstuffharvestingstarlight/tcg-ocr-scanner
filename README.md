@@ -6,6 +6,22 @@ Magic: The Gatheric card scanner using OCR (using Tesseract and OpenCV)
 
 ## Dependencies
 
+### Required Python packages
+
+- numpy
+- hunspell
+- xerox
+
+### Required software
+
+- tesseract
+- xclip or equivalent for your OS (see xerox)
+- GNU make (to build dictionary files)
+
+### Required data
+
+- cards.xml with the cards you'd like to recognise.
+
 ## Installing 
 
 ## Running
