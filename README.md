@@ -8,7 +8,7 @@ Inspired by [card_scan](https://github.com/YenTheFirst/card_scan)
 
 ## Description
 
-Videos + diagrams coming soon
+- Demo of the [clipboard functionality](http://youtu.be/xH1hempwqMk)
 
 ## Roadmap
 
