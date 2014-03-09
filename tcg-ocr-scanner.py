@@ -208,7 +208,12 @@ if __name__ == "__main__":
           poll[suggestions[0]] = 1
 
         if (poll[suggestions[0]] > 10): 
-          last_detected = card_db[suggestions[0]][1]
+          try:
+            last_detected = card_db[suggestions[0]][1]
+          except Exception:
+            print "Couldn't find data for card '%s', skipping" % suggestions[0]
+            continue
+
           message = "Detected: %s (%.2f secs)" % (last_detected , round(time.time() - last_detected_ts, 2))
           last_detected_ts = time.time()
           if options.verbosity >= 1:
