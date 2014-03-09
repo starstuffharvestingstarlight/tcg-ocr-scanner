@@ -220,7 +220,7 @@ class TcgOcrScannerCli(object):
       '-b',
       '--beep', 
       help='beep when scan happens', 
-      action='store_false'
+      action='store_true'
     )
     parser.add_argument(
       '--clipboard', 
