@@ -217,8 +217,9 @@ class TcgOcrScannerCli(object):
     parser = argparse.ArgumentParser(description='Scan MTG cards using OCR (tesseract).')
 
     parser.add_argument(
-      '--nobeep', 
-      help='disable beep when scan happens', 
+      '-b',
+      '--beep', 
+      help='beep when scan happens', 
       action='store_false'
     )
     parser.add_argument(
@@ -285,7 +286,7 @@ class TcgOcrScannerCli(object):
     signal.signal(signal.SIGINT, self.handle_sigint)
 
     handlers = []
-    if self.options.nobeep:
+    if self.options.beep:
       handlers.append(BeepHandler())
     if self.options.verbosity >= 1:
       handlers.append(StdoutHandler())
