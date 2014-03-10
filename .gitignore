@@ -6,5 +6,7 @@ dict/cards.xml
 dict/mtg.aff
 media/tmp.txt
 media/tmp.png
+templates/
+log/
 *.swp
 *.pyc

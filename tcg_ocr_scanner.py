@@ -17,6 +17,19 @@ import xerox
 import argparse
 import signal
 
+# @see https://stackoverflow.com/questions/5849800/tic-toc-functions-analog-in-python
+class Timer(object):
+  def __init__(self, name=None):
+    self.name = name
+
+  def __enter__(self):
+    self.tstart = time.time()
+
+  def __exit__(self, type, value, traceback):
+    if self.name:
+      print '[%s]' % self.name,
+    print 'Elapsed: %s' % (time.time() - self.tstart)
+
 # basic card
 class Card(object):
   (slug, name, detected_in) = ("", "", 1000)
@@ -38,40 +51,99 @@ class CardDb(object):
     data = self.card_db[slug]
     return Card({"slug":data[0], "name":data[1], "expansion": data[2], "multiverse_id": data[3]})
 
-# handlers
-class CardHandler(object):
-  def __init__(self, options = None):
-    return None
-    
-  def handle(self, card):
-    raise NotImplementedError("Please implement the card handler")
+# generic event handler
+class EventHandler(object):
+  def image_captured(self, args=None):
+    return
+  def image_processed(self, args=None):
+    return
+  def card_guesses(self, args=None):
+    return
+  def card_detected(self, args=None):
+    return
+  def card_not_found(self, args=None):
+    return
+  def detector_gave_up(self, args=None):
+    return
+  def detector_stopped(self, args=None):
+    return
+  def detector_started(self, args=None):
+    return
+  def __str__(self):
+    return self.__class__.__name__
 
-class BeepHandler(CardHandler):
+class EventHandlers(object):
+  def __init__(self, handlers):
+    self.handlers = handlers
+  def send(self, method, args=None):
+    for handler in self.handlers:
+      if hasattr(handler, method):
+        if args is None:
+          getattr(handler, method)()
+        else:
+          getattr(handler, method)(args)
+
+# card handlers
+class BeepHandler(EventHandler):
   def __init__(self):
     # sound from http://www.freesound.org/people/zerolagtime/sounds/144418/
-    self.pygame = pygame.init()
-    print self.pygame
+    pygame.init()
     self.beeper = pygame.mixer.Sound("media/beep.wav")
-  def handle(self, card):
+  def card_detected(self, card):
     self.beeper.play()
     time.sleep(self.beeper.get_length())
   def __del__(self):
-    print 'beeper cleanup'
-    self.pygame.quit()
+    try:
+      self.pygame.quit()
+    except Exception:
+      pass
 
-class StdoutHandler(CardHandler):
-  def handle(self, card):
-    print "Detected: %s (%.2f secs)" % (card.name, card.detected_in)
+class StdoutHandler(EventHandler):
+  def __init__(self, verbosity):
+    self.verbosity = verbosity
+  def card_detected(self, card):
+    if self.verbosity == 1:
+      print "Detected: %s (%.2f secs)" % (card.name, card.detected_in)
+    elif self.verbosity >= 2:
+      print "OK, %s, %.2f, %d" % (card.name, card.detected_in, len(card.poll_results))
+    self.count += 1
+  def detector_started(self):
+    self.count = 0
+    print "Detector started"
+  def detector_gave_up(self):
+    if self.verbosity == 1:
+      print "Detection taking too long, giving up"
+    elif self.verbosity >= 2:
+      print "FAIL,,,"
+  def detector_stopped(self):
+    print "Detector stopped. Detected %s cards" % self.count
 
-class ClipboardHandler(CardHandler):
-  def handle(self, card):
+class ClipboardHandler(EventHandler):
+  def card_detected(self, card):
     xerox.copy(card.name)
 
-class CsvHandler(CardHandler):
+class CsvHandler(EventHandler):
   def __init__(self, options):
     print "init file"
-  def handle(self, card):
+  def card_detected(self, card):
     print "write file for %s" % card.name
+
+# image handlers
+class FeedbackWindowImageHandler(EventHandler):
+  def __init__(self):
+    cv.StartWindowThread()
+    cv.NamedWindow("Capture Feedback")
+  def image_captured(self, args):
+    (img, rect) = args
+    (x, y, w, h) = rect
+
+    cv2.rectangle(numpy.asarray(img[:,:]), (x,y+1), (x+w,y+1+h), (0, 0, 0))
+    cv2.rectangle(numpy.asarray(img[:,:]), (x,y), (x+w,y+h), (50, 50, 250))
+    
+    #cv.PutText(img, message, (0,y+1+2*h), font, (255, 255, 255))
+    #cv.PutText(img, message, (0,y+2*h), font, (0, 0, 0))
+    #cv.ShowImage("Capture Feedback", cv2.fromarray(img[:,:]))
+    cv.ShowImage("Capture Feedback", img)
 
 # tesseract
 class Tesseract(object):
@@ -93,15 +165,21 @@ class Tesseract(object):
     f.close()
     return text
 
+  def __del__(self):
+    try:
+      os.remove("media/tmp.png")
+      os.remove("media/tmp.txt")
+    except Exception:
+      pass
+
 # detector
 class Detector(object):
   def __init__(self, options, handlers = []):
     self.speller = hunspell.HunSpell('%s.dic' % options.dictionary, '%s.aff' % options.dictionary)
     self.tesseract = Tesseract()
+    self.handlers = EventHandlers(handlers)
 
-    cv.NamedWindow("CaptureFeedback")
     # cv.NamedWindow("debug")
-    cv.StartWindowThread()
     self.camera = cv.CreateCameraCapture(options.webcam)
 
     self.card_db = CardDb(options)
@@ -129,8 +207,12 @@ class Detector(object):
 
     # max time before giving up
     self.max_wait = options.give_up_after
-
-    self.handlers = handlers
+    
+    # max number of guesses
+    self.max_guesses = 5
+  
+    # time to wait after scan succeeds (s)
+    self.switch_time = 2
 
     self.running = True
 
@@ -138,78 +220,74 @@ class Detector(object):
     #font = cv.InitFont(cv.CV_FONT_HERSHEY_SIMPLEX, 0.7, 0.7)
     font = cv.InitFont(cv.CV_FONT_HERSHEY_PLAIN, 1.3, 1.3)
 
-    (message, last_detected, last_detected_ts, elapsed_s) = ("", "", time.time(), 0)
-
-    debug_ts = time.time()
+    (last_detected_ts, elapsed_s) = (time.time() - self.switch_time, 0)
 
     (x, y, h, w) = (self.x, self.y, self.h, self.w)
 
-    poll = {}
+    (poll, switch_pause) = ({}, False)
+
+    self.handlers.send("detector_started")
+
     while self.running:
       img = cv.QueryFrame(self.camera)
-      # self.debug_ts = tick(self.debug_ts, "Camera")
+      img_arr = numpy.asarray(img[:,:])
 
-      cv2.rectangle(numpy.asarray(img[:,:]), (x,y+1), (x+w,y+1+h), (0, 0, 0))
-      cv2.rectangle(numpy.asarray(img[:,:]), (x,y), (x+w,y+h), (50, 50, 250))
-
-      cv.PutText(img, message, (0,y+1+2*h), font, (255, 255, 255))
-      cv.PutText(img, message, (0,y+2*h), font, (0, 0, 0))
-
-      #debug_ts = tick(debug_ts, "Draw img")
-
-      crop_img = img[y:y+h, x:x+w]
-      #debug_ts = tick(debug_ts, "Crop")
-
-      size = cv.GetSize(crop_img)
-      bw = cv.CreateImage(size, 8, 1)
-      cv.CvtColor(crop_img, bw, cv.CV_RGB2GRAY)
-    
-      #debug_ts = tick(debug_ts, "Make BW")
-
-      cv.ShowImage("CaptureFeedback", img)
-
-      #debug_ts = tick(debug_ts, "Show image")
-      # cv.ShowImage("debug", bw)
+      self.handlers.send("image_captured", (img, (x, y, w, h)))
 
       elapsed_s = time.time() - last_detected_ts
 
-      if elapsed_s < self.max_wait:
-        card = self.tesseract.image_to_string(bw)
-        #debug_ts = tick(debug_ts, "Image to string")
+      if not switch_pause:
+        crop_img = img[y:y+h, x:x+w]
 
-        if len(card) > self.min_card_name:
-          suggestions = self.speller.suggest(card.replace(" ", "")) 
-          #debug_ts = tick(debug_ts, "Speller")
-          if len(suggestions) > 0:
-            
-            # print "I think it is %s" % suggestions[0]
-            if suggestions[0] in poll:
-              poll[suggestions[0]] += 1
-            else: 
-              poll[suggestions[0]] = 1
+        bw = cv.CreateImage((w, h), 8, 1)
+        cv.CvtColor(crop_img, bw, cv.CV_RGB2GRAY)
+      
+        self.handlers.send("image_processed", bw)
 
-            if poll[suggestions[0]] > self.min_suggestions: 
-              if self.card_db.exists(suggestions[0]):
-                card_data = self.card_db.get(suggestions[0])
-                card_data.detected_in = time.time() - last_detected_ts
+        if elapsed_s < self.max_wait:
+          card = self.tesseract.image_to_string(bw)
 
-                last_detected_ts = time.time()
-    
-                for handler in self.handlers:
-                  handler.handle(card_data)
+          if len(card) > self.min_card_name:
+            suggestions = self.speller.suggest(card.replace(" ", "")) 
+            if len(suggestions) > 0 and len(suggestions) < self.max_guesses:
+              best_slug = suggestions[0]
 
-              else:
-                print "Couldn't find data for card '%s', skipping" % suggestions[0]
-    
-              poll = {}
+              if best_slug in poll:
+                poll[best_slug] += 1
+              else: 
+                poll[best_slug] = 1
+
+              self.handlers.send("card_guesses", poll)
+
+              if poll[best_slug] > self.min_suggestions: 
+                if self.card_db.exists(best_slug):
+                  card_data = self.card_db.get(best_slug)
+                  card_data.detected_in = time.time() - self.switch_time - last_detected_ts
+                  card_data.poll_results = poll
+
+                  last_detected_ts = time.time()
+
+                  self.handlers.send("card_detected", card_data)
+
+                else:
+                  self.handlers.send("card_not_found", best_slug)
+      
+                (poll, switch_pause) = ({}, True)
+        else:
+          poll = {}
+          last_detected_ts = time.time()
+
+          self.handlers.send("detector_gave_up", poll)
       else:
-        poll = {}
-        last_detected_ts = time.time()
-        print "gave up detecting, restarting guesses"
+        if elapsed_s > self.switch_time:
+          switch_pause = False
 
       c = cv.WaitKey(10)
 
   def stop(self):
     self.running = False
+    self.handlers.send("detector_stopped")
 
-
+  def __del__(self):
+    del self.tesseract
+    del self.card_db
