@@ -7,3 +7,4 @@ dict/mtg.aff
 media/tmp.txt
 media/tmp.png
 *.swp
+*.pyc

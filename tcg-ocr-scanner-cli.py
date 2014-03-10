@@ -1,0 +1,99 @@
+#!/usr/bin/python
+from tcg_ocr_scanner import *
+
+class TcgOcrScannerCli(object):
+  def __init__(self):
+    parser = argparse.ArgumentParser(description='Scan MTG cards using OCR (tesseract).')
+
+    parser.add_argument(
+      '-b',
+      '--beep', 
+      help='beep when scan happens', 
+      action='store_true'
+    )
+    parser.add_argument(
+      '--clipboard', 
+      help='save card name to clipboard', 
+      action='store_true'
+    )
+    parser.add_argument(
+      '--batchfile', 
+      help='save data to batch file', 
+      nargs='+', 
+      type=argparse.FileType('w') 
+    )
+    parser.add_argument(
+      '-v', 
+      '--verbosity', 
+      help='verbosity level (0: quiet, 1: feedback, 2: debug)', 
+      default=0,
+      metavar='int',
+      type=int,
+      choices=xrange(3)
+    )
+    parser.add_argument(
+      '-d', 
+      '--dictionary',
+      help='dictionary to use (e.g., dict/INN for dict/INN.dic + dict/INN.aff)', 
+      default='./dict/mtg'
+    )
+    parser.add_argument(
+      '--min-suggestions', 
+      help='minimum number of suggestions polled (e.g., 5 means it is considered a correct guess after 5 equal guesses)', 
+      default=8,
+      metavar='int',
+      type=int,
+      choices=xrange(100)
+    )
+    parser.add_argument(
+      '--min-length', 
+      help='minimum length for a detected card name', 
+      default=3,
+      metavar='int',
+      type=int,
+      choices=xrange(100)
+    )
+    parser.add_argument(
+      '--webcam', 
+      help='webcam number (usually, the biggest number is the one you plugged in)', 
+      default=1,
+      metavar='int',
+      type=int,
+      choices=xrange(10)
+    )
+    parser.add_argument(
+      '--give-up-after',
+      help='maximum number of seconds to try to guess the card',
+      default=80,
+      metavar='int',
+      type=int,
+      choices=xrange(360)
+    )
+
+    self.options = parser.parse_args()
+  
+    signal.signal(signal.SIGINT, self.handle_sigint)
+
+    handlers = []
+    if self.options.beep:
+      handlers.append(BeepHandler())
+    if self.options.verbosity >= 1:
+      handlers.append(StdoutHandler())
+    if self.options.clipboard:
+      handlers.append(ClipboardHandler())
+
+    self.detector = Detector(self.options, handlers)
+
+  def handle_sigint(self, signal, frame):
+    self.detector.stop()
+
+  def run(self):
+    self.detector.run()
+
+  def cleanup(self):
+    for handler in handlers:
+      del handler
+
+if __name__ == "__main__":
+  app = TcgOcrScannerCli()
+  app.run()
