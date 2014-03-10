@@ -40,8 +40,8 @@ class TcgOcrScannerCli(object):
       default="./dict/mtg"
     )
     parser.add_argument(
-      "-ncw",
-      "--no-capture-window",
+      "-cw"
+      "--capture-window",
       help="don't show a capture window", 
       action="store_true"
     )
@@ -87,9 +87,9 @@ class TcgOcrScannerCli(object):
       handlers.append(BeepHandler())
     if self.options.clipboard:
       handlers.append(ClipboardHandler())
-    if not self.options.no_capture_window:
+    if self.options.capture_window:
       handlers.append(FeedbackWindowImageHandler())
-    if self.options.verbosity >= 1:
+    if self.options.verbosity:
       handlers.append(StdoutHandler(self.options.verbosity))
       print "Registered handlers: %s" % ", ".join(str(v) for v in handlers)
 
