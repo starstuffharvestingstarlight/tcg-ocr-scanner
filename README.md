@@ -19,7 +19,10 @@ My setup cost a total of AUD $10 and consists of:
 
 ### Demos
 
-- Demo of the [clipboard functionality](http://youtu.be/xH1hempwqMk)
+| Date | Functionality  | Comments | Videos  | 
+| ---- | -------------  | -------- | ------  |
+| 2014-03-10 | Clipboard      | This is the first demo of the app, the detection calculation wasn't correct as it included the UI rendering times. This mode is only useful if the system is always on, say, in a games shop selling singles. | [![Clipboard functionality](http://img.youtube.com/vi/xH1hempwqMk/1.jpg)](http://youtu.be/xH1hempwqMk) |
+| 2014-03-11 | Export to deckbox.org  | One of the output formats available is the deckbox.org csv format. From there, it is possible to manage the collection appropriately. A lot of the metadata on the card is still being worked on. Note that this detector captured both a split card (a hard one at that too) and a sleeved card. As long as the lighting is good, it will read the card, regardless of whether it is sleeved, in a binder or on its own. The main challenge is the alignment, since there is no card detector (yet).  | [![deckbox.org import](http://img.youtube.com/vi/27QnTu-SrWQ/1.jpg)](http://youtu.be/27QnTu-SrWQ) |
 
 ### Detection system description
 
