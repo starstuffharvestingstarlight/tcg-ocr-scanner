@@ -19,10 +19,24 @@ class TcgOcrScannerCli(object):
     )
     parser.add_argument(
       "-o",
-      "--outputfile", 
-      help="save data to batch file", 
+      "--output-file", 
+      help="save data to batch file(s)", 
       nargs="+", 
       type=argparse.FileType("w") 
+    )
+    parser.add_argument(
+      "-of", 
+      "--output-format",
+      help="output format to use when outputting a file (goes together with -o, multiples matched in order)", 
+      default=["deckbox_org_csv"],
+      nargs="+", 
+      choices=["deckbox_org_csv", "debug_csv"]
+    )
+    parser.add_argument(
+      "-d", 
+      "--dictionary",
+      help="dictionary to use (e.g., dict/INN for dict/INN.dic + dict/INN.aff)", 
+      default="./dict/mtg"
     )
     parser.add_argument(
       "-v", 
@@ -34,13 +48,7 @@ class TcgOcrScannerCli(object):
       choices=xrange(3)
     )
     parser.add_argument(
-      "-d", 
-      "--dictionary",
-      help="dictionary to use (e.g., dict/INN for dict/INN.dic + dict/INN.aff)", 
-      default="./dict/mtg"
-    )
-    parser.add_argument(
-      "-cw"
+      "-cw",
       "--capture-window",
       help="don't show a capture window", 
       action="store_true"
@@ -89,6 +97,11 @@ class TcgOcrScannerCli(object):
       handlers.append(ClipboardHandler())
     if self.options.capture_window:
       handlers.append(FeedbackWindowImageHandler())
+    if self.options.output_file:
+      for i, out_file in enumerate(self.options.output_file):
+        if i < len(self.options.output_format):
+          out_format = self.options.output_format[i]
+        handlers.append(OutputFileHandler(out_file, out_format))
     if self.options.verbosity:
       handlers.append(StdoutHandler(self.options.verbosity))
       print "Registered handlers: %s" % ", ".join(str(v) for v in handlers)

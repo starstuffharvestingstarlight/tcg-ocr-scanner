@@ -16,6 +16,7 @@ from PIL import Image, ImageDraw
 import xerox
 import argparse
 import signal
+import csv
 
 # @see https://stackoverflow.com/questions/5849800/tic-toc-functions-analog-in-python
 class Timer(object):
@@ -122,11 +123,44 @@ class ClipboardHandler(EventHandler):
   def card_detected(self, card):
     xerox.copy(card.name)
 
-class CsvHandler(EventHandler):
-  def __init__(self, options):
-    print "init file"
+class OutputFileHandler(EventHandler):
+  def __init__(self, out_file, out_format):
+    self.out_file = out_file
+    self.out_format = out_format
+    getattr(self, "_init_%s" % out_format)()
+  
+  def __del__(self):
+    getattr(self, "_del_%s" % self.out_format)()
+    self.out_file.close()
+    del self.out_file
+
+  # deckbox_org_csv
+  def _init_deckbox_org_csv(self):
+    self.writer = csv.writer(self.out_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+    self.writer.writerow(["Count","Tradelist Count","Name","Foil","Textless","Promo","Signed","Edition","Condition","Language"])
+
+  def _write_deckbox_org_csv(self, card):
+    self.writer.writerow([1,0,card.name,"","","","","","","English"])
+
+  def _del_deckbox_org_csv(self):
+    return 
+  
+  # debug stats
+  def _init_debug_csv(self):
+    self.writer = csv.writer(self.out_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+    self.writer.writerow(["Count","Tradelist Count","Name","Foil","Textless","Promo","Signed","Edition","Condition","Language"])
+
+  def _write_debug_csv(self, card):
+    self.writer = csv.writer(self.out_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+    self.writer.writerow(["Count","Tradelist Count","Name","Foil","Textless","Promo","Signed","Edition","Condition","Language"])
+
+  def _del_debug_csv(self):
+    return
+  
+  # event handler
   def card_detected(self, card):
-    print "write file for %s" % card.name
+    getattr(self, "_write_%s" % self.out_format)(card)
+
 
 # image handlers
 class FeedbackWindowImageHandler(EventHandler):
