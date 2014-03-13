@@ -111,7 +111,7 @@ class StdoutHandler(EventHandler):
   def detector_started(self):
     self.count = 0
     print "Detector started"
-  def detector_gave_up(self):
+  def detector_gave_up(self, args):
     if self.verbosity == 1:
       print "Detection taking too long, giving up"
     elif self.verbosity >= 2:
