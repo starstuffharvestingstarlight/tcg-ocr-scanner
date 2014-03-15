@@ -4,6 +4,7 @@ import pygame
 import numpy
 import xerox
 import csv
+import time
 
 # generic event handler
 class EventHandler(object):
