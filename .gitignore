@@ -1,12 +1,11 @@
-dict/cards_joined.wordlist
-dict/cards.wordlist
-dict/mtg.dic
-dict/cards.pickle
-dict/cards.xml
-dict/mtg.aff
 media/tmp.txt
 media/tmp.png
 templates/
 log/
+db/cards.xml
+db/database.sqlite
+db/tcg.dic
+db/tcg.aff
+db/expansion.whitelist
 *.swp
 *.pyc
