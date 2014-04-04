@@ -35,8 +35,8 @@ class TcgOcrScannerCli(object):
 		parser.add_argument(
 			'-d', 
 			'--dictionary',
-			help='dictionary to use (e.g., dict/INN for dict/INN.dic + dict/INN.aff)', 
-			default='./dict/mtg'
+			help='dictionary to use (e.g., db/standard for db/std.dic + db/std.aff)', 
+			default='./db/tcg'
 		)
 		parser.add_argument(
 			'-v', 
@@ -85,9 +85,21 @@ class TcgOcrScannerCli(object):
 			type=int,
 			choices=xrange(360)
 		)
+		parser.add_argument(
+			'-e', 
+			'--expansions',
+			help='expansion names to select from', 
+			default=[],
+			nargs='+'
+		)
+		parser.add_argument(
+			'--rebuild-db', 
+			help='rebuild db and dictionary from source files', 
+			action='store_true'
+		)
 
 		self.options = parser.parse_args()
-	
+
 		signal.signal(signal.SIGINT, self.handle_sigint)
 
 		handlers = []
@@ -117,6 +129,10 @@ class TcgOcrScannerCli(object):
 	def cleanup(self):
 		for handler in handlers:
 			del handler
+
+	def log(self, msg):
+		if self.options.verbosity:
+			print msg
 
 if __name__ == '__main__':
 	app = TcgOcrScannerCli()

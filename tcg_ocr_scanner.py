@@ -94,7 +94,7 @@ class Detector(object):
 		self.provider = WebcamImageProvider(self.image_queue, options.webcam)
 
 		# cv.NamedWindow('debug')
-		self.card_db = CardDb(options)
+		self.card_db = CardDb(options) # FIXME needs some handler rewiring here for db logs
 
 		self.poll = {}
 
