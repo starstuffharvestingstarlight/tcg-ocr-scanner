@@ -39,13 +39,17 @@ class Tesseract(object):
 		self.DEV_NULL = open(os.devnull, 'w')
 
 	def image_to_string(self, img):
-		cv.SaveImage('media/tmp.png', img)
-		subprocess.call(
-			['tesseract', 'media/tmp.png', 'media/tmp', '-l', 'eng', '-psm', '7', 'tesseract.config'],
-			stdout=self.DEV_NULL,
-			stderr=subprocess.STDOUT
-		)
-		return self.file_to_string('media/tmp.txt')
+		with Timer('image_to_string_save', 2):
+			cv.SaveImage('media/tmp.png', img)
+		with Timer('image_to_string_proc', 2):
+			subprocess.call(
+				['tesseract', 'media/tmp.png', 'media/tmp', '-l', 'eng', '-psm', '7', 'tesseract.config'],
+				stdout=self.DEV_NULL,
+				stderr=subprocess.STDOUT
+			)
+		with Timer('image_to_string_cat', 2):
+			txt = self.file_to_string('media/tmp.txt')
+		return txt
 
 	def file_to_string(self, file_name):
 		f = file(file_name)
