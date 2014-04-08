@@ -5,24 +5,25 @@ import numpy
 import xerox
 import csv
 import time
+import threading
 
 # generic event handler
 class EventHandler(object):
-	def image_captured(self, args=None):
+	def image_captured(self, *args):
 		return
-	def image_processed(self, args=None):
+	def image_processed(self, *args):
 		return
-	def card_guesses(self, args=None):
+	def card_guesses(self, *args):
 		return
-	def card_detected(self, args=None):
+	def card_detected(self, *args):
 		return
-	def card_not_found(self, args=None):
+	def card_not_found(self, *args):
 		return
-	def detector_gave_up(self, args=None):
+	def detector_gave_up(self, *args):
 		return
-	def detector_stopped(self, args=None):
+	def detector_stopped(self, *args):
 		return
-	def detector_started(self, args=None):
+	def detector_started(self, *args):
 		return
 	def __str__(self):
 		return self.__class__.__name__
@@ -30,13 +31,14 @@ class EventHandler(object):
 class EventHandlers(object):
 	def __init__(self, handlers):
 		self.handlers = handlers
-	def send(self, method, args=None):
+	def send(self, method, *args):
+		proc = []
 		for handler in self.handlers:
 			if hasattr(handler, method):
-				if args is None:
-					getattr(handler, method)()
-				else:
-					getattr(handler, method)(args)
+				p = threading.Thread(target=getattr(handler, method), args=args)
+				p.start()
+				proc.append(p)
+		[p.join() for p in proc]
 
 # card handlers
 class BeepHandler(EventHandler):
