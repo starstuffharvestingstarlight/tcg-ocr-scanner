@@ -118,7 +118,7 @@ class TcgOcrScannerCli(object):
 			handlers.append(StdoutHandler(self.options.verbosity))
 			print 'Registered handlers: %s' % ', '.join(str(v) for v in handlers)
 
-		self.detector = Detector(self.options, handlers)
+		self.detector = DetectorDaemon(self.options, handlers)
 
 	def handle_sigint(self, signal, frame):
 		self.detector.stop()

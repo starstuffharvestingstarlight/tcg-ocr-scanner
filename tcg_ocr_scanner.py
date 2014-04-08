@@ -20,7 +20,6 @@ import threading
 from handlers import *
 from database import *
 
-
 # @see https://stackoverflow.com/questions/5849800/tic-toc-functions-analog-in-python
 class Timer(object):
 	def __init__(self, name=None, verbosity=0):
@@ -32,9 +31,7 @@ class Timer(object):
 
 	def __exit__(self, type, value, traceback):
 		if self.verbosity > 1:
-			if self.name:
-				print '[%s]' % self.name,
-			print 'Elapsed: %s' % (time.time() - self.tstart)
+			print '%s, %e' % (self.name if self.name else 'timer', time.time() - self.tstart)
 
 # tesseract
 class Tesseract(object):
@@ -76,141 +73,174 @@ class WebcamImageProvider(ImageProvider):
 		self.camera = cv.CreateCameraCapture(webcam)
 		img = cv.QueryFrame(self.camera)
 		if img is None:
-			raise Empty
-		
+			raise queue.Empty
+		self.running = True
+
 	def run(self):
-		while True:
+		while self.running:
 			img = cv.QueryFrame(self.camera)
 			self.image_queue.put(img)
 			c = cv.WaitKey(30)
 
-# detector
-class Detector(object):
-	def __init__(self, options, handlers = []):
-		self.speller = hunspell.HunSpell('%s.dic' % options.dictionary, '%s.aff' % options.dictionary)
-		self.tesseract = Tesseract()
-		self.handlers = EventHandlers(handlers)
-		self.image_queue = queue.Queue()
-		self.provider = WebcamImageProvider(self.image_queue, options.webcam)
+	def stop(self):
+		self.running = False
 
-		# cv.NamedWindow('debug')
-		self.card_db = CardDb(options) # FIXME needs some handler rewiring here for db logs
+# this needs to do both frame detection and processor chain fetching from the db
+class Frame(object):
+	def __init__(self, img):
+		(self.max_w, self.max_h) = cv.GetSize(img)
+		# rectangle position TODO: use frame detection
+		(self.w, self.h) = (350, 30)
+		(self.x, self.y) = (self.max_w/2 - self.w/2, 0)
+		self.rect = (self.x, self.y, self.w, self.h)
+		# TODO: replace with frame specific blocks from db
+		self.processors = ['CropProcessor', 'GreyscaleProcessor']
 
-		self.poll = {}
+class DetectorThread(threading.Thread):
+	def __init__(self, 
+		card_db, image_queue, handlers, tesseract, speller,
+		min_suggestions=0, max_wait=2, verbosity=0, min_card_name=3, max_guesses=5, switch_time=2
+	):
+		super(DetectorThread, self).__init__()
+		self.daemon = True
+		self.running = True
+		self.card_db = card_db
+		self.image_queue = image_queue
+		self.handlers = handlers
+		self.tesseract = tesseract
+		self.speller = speller
 
-		self.provider.start()
+		# options
+		self.min_suggestions = min_suggestions
+		self.max_wait = max_wait
+		self.verbosity = verbosity
+		self.max_guesses = max_guesses
+		self.min_card_name = min_card_name
+		self.switch_time = switch_time
+
+	def doCropProcessor(self, img):
+		(x, y, w, h) = self.frame.rect
+		return img[y:y+h, x:x+w]
+
+	def doGreyscaleProcessor(self, img):
+		(x, y, w, h) = self.frame.rect
+		bw = cv.CreateImage((w, h), 8, 1)
+		cv.CvtColor(img, bw, cv.CV_RGB2GRAY)
+		return bw
+
+	def doInvertProcessor(self, img):
+		# FIXME this is neat for frames with white text
+		return img
+
+	def run(self):
+		(last_detected_ts, elapsed_s) = (time.time(), 0)
+		poll = {}
 
 		try:
 			img = self.image_queue.get(block = True, timeout = 60)
 		except queue.Empty:
 			print 'Could not load images from webcam, please check settings'
-			exit()
+			return
+		self.frame = Frame(img) # TODO move to main loop, detect frame
 		
-		(self.max_w, self.max_h) = cv.GetSize(img)
-
-		# settings
-		# rectangle position
-		(self.w, self.h) = (350, 30)
-		(self.x, self.y) = (self.max_w/2 - self.w/2, 0)
-
-		# minimum card name length
-		self.min_card_name = options.min_length
-
-		# suggestion threshold
-		self.min_suggestions = options.min_suggestions
-
-		# max time before giving up
-		self.max_wait = options.give_up_after
-		
-		# max number of guesses
-		self.max_guesses = 5
-	
-		# time to wait after scan succeeds (s)
-		self.switch_time = 2
-
-		self.running = True
-
-	def run(self):
-		#font = cv.InitFont(cv.CV_FONT_HERSHEY_SIMPLEX, 0.7, 0.7)
-		font = cv.InitFont(cv.CV_FONT_HERSHEY_PLAIN, 1.3, 1.3)
-
-		(last_detected_ts, elapsed_s) = (time.time() - self.switch_time, 0)
-
-		(x, y, h, w) = (self.x, self.y, self.h, self.w)
-
-		(poll, switch_pause) = ({}, False)
-
 		self.handlers.send('detector_started')
-
 		while self.running:
-			with Timer('capture image', 0):
-				try:
-					img = self.image_queue.get(block = True, timeout = self.max_wait)
-				except Empty:
-					poll = {}
-					last_detected_ts = time.time()
-					self.handlers.send('detector_gave_up', poll)
-					continue
-
-				# img = cv.QueryFrame(self.camera)
-				img_arr = numpy.asarray(img[:,:])
-
-				self.handlers.send('image_captured', (img, (x, y, w, h)))
-
 			elapsed_s = time.time() - last_detected_ts
 
-			if not switch_pause:
-				with Timer('process_image', 0):
-					crop_img = img[y:y+h, x:x+w]
+			if elapsed_s > self.max_wait:
+				self.handlers.send('detector_gave_up', poll)
+				poll = {}
+				continue
 
-					bw = cv.CreateImage((w, h), 8, 1)
-					cv.CvtColor(crop_img, bw, cv.CV_RGB2GRAY)
-			
-				self.handlers.send('image_processed', bw)
+			try:
+				with Timer('consume_image', self.verbosity):
+					img = self.image_queue.get(block = True, timeout = self.max_wait)
+				self.handlers.send('image_captured', (img, self.frame.rect))
 
-				if elapsed_s < self.max_wait:
-					with Timer('image_to_string', 0):
-						card = self.tesseract.image_to_string(bw)
+			except queue.Empty:
+				poll = {}
+				self.handlers.send('detector_gave_up', poll)
+				continue
 
+			if elapsed_s < self.switch_time:
+				continue
 
-					if len(card) > self.min_card_name:
-						suggestions = self.speller.suggest(card.replace(' ', '')) 
-						if len(suggestions) > 0 and len(suggestions) < self.max_guesses:
-							best_slug = suggestions[0]
+			with Timer('process_image', self.verbosity):
+				img_arr = numpy.asarray(img[:,:])
 
-							if best_slug in poll:
-								poll[best_slug] += 1
-							else: 
-								poll[best_slug] = 1
+				for processor in self.frame.processors:
+					with Timer('processor_%s' % processor):
+						img = getattr(self, 'do%s' % processor)(img)
+				self.handlers.send('image_processed', img)
 
-							self.handlers.send('card_guesses', poll)
+			with Timer('image_to_string', self.verbosity):
+				card = self.tesseract.image_to_string(img)
 
-							if poll[best_slug] > self.min_suggestions: 
-								if self.card_db.exists(best_slug):
-									card_data = self.card_db.get(best_slug)
-									card_data.detected_in = time.time() - self.switch_time - last_detected_ts
-									card_data.poll_results = poll
+			if len(card) < self.min_card_name:
+				continue
 
-									last_detected_ts = time.time()
+			with Timer('spell_check', self.verbosity):
+				suggestions = self.speller.suggest(card.replace(' ', '')) 
 
-									self.handlers.send('card_detected', card_data)
+			if not suggestions or len(suggestions) > self.max_guesses:
+				continue
 
-								else:
-									self.handlers.send('card_not_found', best_slug)
-			
-								(poll, switch_pause) = ({}, True)
-				else:
-					poll = {}
-					last_detected_ts = time.time()
+			best_slug = suggestions[0]
 
-					self.handlers.send('detector_gave_up', poll)
+			if best_slug in poll:
+				poll[best_slug] += 1
+			else: 
+				poll[best_slug] = 1
+
+			self.handlers.send('card_guesses', poll)
+
+			if poll[best_slug] <= self.min_suggestions: 
+				continue
+
+			if self.card_db.exists(best_slug):
+				card_data = self.card_db.get(best_slug)
+				card_data.detected_in = time.time() - self.switch_time - last_detected_ts
+				card_data.poll_results = poll
+				self.handlers.send('card_detected', card_data)
+
+				last_detected_ts = time.time()
+
 			else:
-				if elapsed_s > self.switch_time:
-					switch_pause = False
+				self.handlers.send('card_not_found', best_slug)
+
+			poll = {}
 
 	def stop(self):
 		self.running = False
 		self.handlers.send('detector_stopped')
+
+
+class DetectorDaemon(object):
+	def __init__(self, options, handlers = []):
+		self.speller = hunspell.HunSpell('%s.dic' % options.dictionary, '%s.aff' % options.dictionary)
+		self.tesseract = Tesseract()
+		self.handlers = EventHandlers(handlers)
+		self.image_queue = queue.Queue()
+		self.verbosity = options.verbosity # FIXME not sold on this
+		self.card_db = CardDb(options) # FIXME needs some handler rewiring here for db logs
+
+		self.provider = WebcamImageProvider(self.image_queue, options.webcam)
+		self.detector = DetectorThread(
+			self.card_db, self.image_queue, self.handlers, self.tesseract, self.speller,
+			options.min_suggestions, options.give_up_after, options.verbosity, options.min_length
+		);
+
+		self.running = True
+
+	def run(self):
+		[t.start() for t in [self.provider, self.detector]]
+		while self.running:
+			time.sleep(1)
+
+	def stop(self):
+		[t.stop() for t in [self.provider, self.detector]]
+		[t.join() for t in [self.provider, self.detector]]
+		self.running = False
 
 	def __del__(self):
 		del self.tesseract

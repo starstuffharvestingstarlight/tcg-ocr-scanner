@@ -60,7 +60,7 @@ class StdoutHandler(EventHandler):
 		if self.verbosity == 1:
 			print 'Detected: %s (%.2f secs)' % (card.name, card.detected_in)
 		elif self.verbosity >= 2:
-			print 'OK, %s, %.2f, %d' % (card.name, card.detected_in, len(card.poll_results))
+			print 'detection successful, %e, %d, %s' % (card.detected_in, len(card.poll_results), card.name)
 		self.count += 1
 	def detector_started(self):
 		self.count = 0
@@ -69,7 +69,7 @@ class StdoutHandler(EventHandler):
 		if self.verbosity == 1:
 			print 'Detection taking too long, giving up'
 		elif self.verbosity >= 2:
-			print 'FAIL,,,'
+			print 'detection timed out,,,'
 	def detector_stopped(self):
 		print 'Detector stopped. Detected %s cards' % self.count
 
