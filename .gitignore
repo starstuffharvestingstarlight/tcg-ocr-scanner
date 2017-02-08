@@ -2,10 +2,12 @@ media/tmp.txt
 media/tmp.png
 templates/
 log/
+db/*.sqlite
 db/cards.xml
-db/database.sqlite
 db/tcg.dic
 db/tcg.aff
 db/expansion.whitelist
 *.swp
 *.pyc
+train/*.jpg
+train/*.pickle
